@@ -7,11 +7,6 @@ extension NWInterface.InterfaceType: @retroactive CaseIterable {
     ]
 }
 
-extension DispatchQueue {
-    // Dedicated queue to handle concurrency reqs for NWPathMonitor
-    static let nwPathMonitorMutatingLock = DispatchQueue(label: "nwpathmonitor.lock.queue")
-}
-
 final class NetworkMonitor: @unchecked Sendable {
     private let monitor: NWPathMonitor
 
@@ -34,7 +29,7 @@ extension NetworkMonitor {
 
 extension NetworkMonitor {
     func startMonitoring() {
-        DispatchQueue.nwPathMonitorMutatingLock.sync { [weak self] in
+        DispatchQueue.networkMonitorQueue.sync { [weak self] in
             self?.monitor.pathUpdateHandler = { [weak self] path in
                 self?.isConnected = (path.status != .unsatisfied && path.status != .requiresConnection)
                 self?.isExpensive = path.isExpensive
@@ -43,7 +38,7 @@ extension NetworkMonitor {
     }
 
     func stopMonitoring() {
-        DispatchQueue.nwPathMonitorMutatingLock.sync { [weak self] in
+        DispatchQueue.networkMonitorQueue.sync { [weak self] in
             self?.monitor.cancel()
         }
     }
